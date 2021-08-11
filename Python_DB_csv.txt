@@ -1,0 +1,98 @@
+import csv
+import cx_Oracle as oci
+
+# 테이블 생성 함수
+def createDBTable():
+        # 1) Connection 객체 얻어오기
+        conn = oci.connect("hr/1234@localhost:1521/xe")
+
+        # 2) Cursor 객체 얻어오기
+        cursor = conn.cursor()
+
+        # 3) SQL 문장
+        # supply 테이블 생성
+        # supply.csv를 보면서 각 컬럼 지정
+        # id integer PK 추가
+        sql = '''
+            CREATE TABLE supply(
+            Id NUMBER PRIMARY KEY,
+            Supplier_Name VARCHAR2(20),
+            Invoice_Number VARCHAR2(20) ,
+            Part_Number VARCHAR2(20),
+            Cost NUMBER,
+            Purchase DATE)
+        '''
+        sql_seq='CREATE SEQUENCE seq_supply_id'
+
+        # 4) sql 문장 실행하기
+        cursor.execute(sql)
+        cursor.execute(sql_seq)
+
+        # 5) cursor 닫기
+        cursor.close()
+
+        # 6)connection 닫기
+        conn.close()
+
+
+# 레코드 입력 함수
+def insertDB(row):
+        # 1) Connection 객체 얻어오기
+        conn = oci.connect("hr/1234@localhost:1521/xe")
+        # 2) Cursor 객체 얻어오기
+        cursor = conn.cursor()
+        # 3) SQL 문장
+        sql = '''
+            INSERT INTO supply
+            (Id, Supplier_Name,Invoice_Number, Part_Number,Cost,Purchase)
+            VALUES
+            (seq_supply_id.nextval, :0, :1, :2, :3, :4)
+        '''
+        # 4) sql 문장 실행하기
+        cursor.execute(sql, row)    # row도 같이 지정해준다
+        conn.commit()   #### 중요 / 커밋해줘야한다.
+        # 5) cursor 닫기
+        cursor.close()
+        # 6)connection 닫기
+        conn.close()
+
+
+# 해당 테이블에 레코드 검색
+def viewTable(table_name):
+        # 1) Connection 객체 얻어오기
+        conn = oci.connect("hr/1234@localhost:1521/xe")
+        # 2) Cursor 객체 얻어오기
+        cursor = conn.cursor()
+        # 3) **** SQL 문장
+        sql = 'SELECT * FROM {0}'.format(table_name)
+        # 4) ****** 실행후 검색 결과 출력
+        cursor.execute(sql)
+
+        for rs in cursor:
+            print(rs[0],rs[1])
+            print(rs)
+
+        # 5) cursor 닫기
+        cursor.close()
+        # 6)connection 닫기
+        conn.close()
+
+if __name__ == '__main__':
+    # 1. 테이블생성
+    # createDBTable()
+
+    # 2. csv 파일에서 읽기
+    file_name = '../files/supply.csv'
+    f = open(file_name,'rt',encoding='utf-8')
+    datas = csv.reader(f, delimiter=',')    # delimiter:연산자
+    # print(datas)
+    header = next(datas, None)
+    print('제목줄: ', header)
+    print('-'*50)
+
+    for row in datas:
+        print(row)
+        # insertDB(row)
+
+    # 3. 해당 테이블을 검색
+    viewTable('supply')     # 튜플로 가져옴
